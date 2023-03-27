@@ -28,6 +28,9 @@ ASarCharacter::ASarCharacter()
 
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent);
+
+	Combat = CreateDefaultSubobject<UCombatComponent>("CombatComponent");
+	Combat->SetIsReplicated(true);
 }
 
 void ASarCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -60,6 +63,17 @@ void ASarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 	PlayerInputComponent->BindAxis("MoveRight", this, &ASarCharacter::MoveRight);
 	PlayerInputComponent->BindAxis("Turn", this, &ASarCharacter::Turn);
 	PlayerInputComponent->BindAxis("LookUp", this, &ASarCharacter::LookUp);
+
+	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ASarCharacter::EquipButtonPressed);
+}
+
+void ASarCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+	if (Combat)
+	{
+		Combat->Character = this;
+	}
 }
 
 void ASarCharacter::MoveForward(float Value)
@@ -90,6 +104,14 @@ void ASarCharacter::Turn(float Value)
 void ASarCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
+}
+
+void ASarCharacter::EquipButtonPressed()
+{
+	if (Combat && HasAuthority())
+	{
+		Combat->EquipWeapon(OverlappingWeapon);
+	}
 }
 
 void ASarCharacter::SetOverlappingWeapon(AWeapon* Weapon)
