@@ -30,4 +30,5 @@ void USarAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsInAir = SarCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = SarCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 	bWeaponEquipped = SarCharacter->IsWeaponEquipped();
+	bIsCrouched = SarCharacter->bIsCrouched;
 }
