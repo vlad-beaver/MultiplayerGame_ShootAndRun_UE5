@@ -68,6 +68,8 @@ void ASarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 	PlayerInputComponent->BindAction("Equip", IE_Pressed, this, &ASarCharacter::EquipButtonPressed);
 	PlayerInputComponent->BindAction("Crouch", IE_Pressed, this, &ASarCharacter::CrouchButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Pressed, this, &ASarCharacter::AimButtonPressed);
+	PlayerInputComponent->BindAction("Aim", IE_Released, this, &ASarCharacter::AimButtonReleased);
 }
 
 void ASarCharacter::PostInitializeComponents()
@@ -144,6 +146,22 @@ void ASarCharacter::CrouchButtonPressed()
 	}
 }
 
+void ASarCharacter::AimButtonPressed()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(true);
+	}
+}
+
+void ASarCharacter::AimButtonReleased()
+{
+	if (Combat)
+	{
+		Combat->SetAiming(false);
+	}
+}
+
 void ASarCharacter::SetOverlappingWeapon(AWeapon* Weapon)
 {
 	if (OverlappingWeapon)
@@ -175,4 +193,9 @@ void ASarCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 bool ASarCharacter::IsWeaponEquipped()
 {
 	return (Combat && Combat->EquippedWeapon);
+}
+
+bool ASarCharacter::IsAiming()
+{
+	return (Combat && Combat->bAiming);
 }
