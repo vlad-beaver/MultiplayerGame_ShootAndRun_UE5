@@ -6,6 +6,7 @@
 #include "SarCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "ShootAndRun/Weapon/Weapon.h"
 
 void USarAnimInstance::NativeInitializeAnimation()
 {
@@ -31,6 +32,7 @@ void USarAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsInAir = SarCharacter->GetCharacterMovement()->IsFalling();
 	bIsAccelerating = SarCharacter->GetCharacterMovement()->GetCurrentAcceleration().Size() > 0.f ? true : false;
 	bWeaponEquipped = SarCharacter->IsWeaponEquipped();
+	EquippedWeapon = SarCharacter->GetEquippedWeapon();
 	bIsCrouched = SarCharacter->bIsCrouched;
 	bAiming = SarCharacter->IsAiming();
 
@@ -50,4 +52,14 @@ void USarAnimInstance::NativeUpdateAnimation(float DeltaTime)
 
 	AO_Yaw = SarCharacter->GetAO_Yaw();
 	AO_Pitch = SarCharacter->GetAO_Pitch();
+
+	if (bWeaponEquipped && EquippedWeapon && EquippedWeapon->GetWeaponMesh() && SarCharacter->GetMesh())
+	{
+		LeftHandTransform = EquippedWeapon->GetWeaponMesh()->GetSocketTransform(FName("LeftHandSocket"), ERelativeTransformSpace::RTS_World);
+		FVector OutPosition;
+		FRotator OutRotation;
+		SarCharacter->GetMesh()->TransformToBoneSpace(FName("hand_r"), LeftHandTransform.GetLocation(), FRotator::ZeroRotator, OutPosition, OutRotation);
+		LeftHandTransform.SetLocation(OutPosition);
+		LeftHandTransform.SetRotation(FQuat(OutRotation));
+	}
 }

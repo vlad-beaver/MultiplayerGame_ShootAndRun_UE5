@@ -235,3 +235,9 @@ bool ASarCharacter::IsAiming()
 {
 	return (Combat && Combat->bAiming);
 }
+
+AWeapon* ASarCharacter::GetEquippedWeapon()
+{
+	if (Combat == nullptr) return nullptr;
+	return Combat->EquippedWeapon;
+}
