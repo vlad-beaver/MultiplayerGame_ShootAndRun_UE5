@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "ShootAndRun/SarTypes/TurningInPlace.h"
 #include "SarAnimInstance.generated.h"
 
 /**
@@ -59,4 +60,7 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, Category=Movement, meta=(AllowPrivateAccess="true"))
 	FTransform LeftHandTransform;
+
+	UPROPERTY(BlueprintReadOnly, Category=Movement, meta=(AllowPrivateAccess="true"))
+	ETurningInPlace TurningInPlace;
 };

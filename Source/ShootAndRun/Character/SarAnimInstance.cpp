@@ -35,6 +35,7 @@ void USarAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	EquippedWeapon = SarCharacter->GetEquippedWeapon();
 	bIsCrouched = SarCharacter->bIsCrouched;
 	bAiming = SarCharacter->IsAiming();
+	TurningInPlace = SarCharacter->GetTurningInPlace();
 
 	// Offset Yaw for Strafing
 	FRotator AimRotation = SarCharacter->GetBaseAimRotation();
