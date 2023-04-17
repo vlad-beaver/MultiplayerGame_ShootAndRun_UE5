@@ -6,10 +6,11 @@
 #include "GameFramework/Character.h"
 #include "ShootAndRun/SarComponents/CombatComponent.h"
 #include "ShootAndRun/SarTypes/TurningInPlace.h"
+#include "ShootAndRun/Interfaces/InteractWithCrosshairsInterface.h"
 #include "SarCharacter.generated.h"
 
 UCLASS()
-class SHOOTANDRUN_API ASarCharacter : public ACharacter
+class SHOOTANDRUN_API ASarCharacter : public ACharacter, public IInteractWithCrosshairsInterface 
 {
 	GENERATED_BODY()
 
@@ -79,4 +80,5 @@ public:
 	AWeapon* GetEquippedWeapon();
 	FORCEINLINE ETurningInPlace GetTurningInPlace() const { return TurningInPlace; }
 	FVector GetHitTarget() const;
+	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 };
