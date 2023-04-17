@@ -9,6 +9,7 @@
 #include "ShootAndRun/Character/SarCharacter.h"
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
+#include "Kismet/KismetMathLibrary.h"
 
 AWeapon::AWeapon()
 {
@@ -123,14 +124,21 @@ void AWeapon::Fire(const FVector& HitTarget)
 		if (AmmoEjectSocket)
 		{
 			FTransform SocketTransform = AmmoEjectSocket->GetSocketTransform(WeaponMesh);
-			
+			// Added random rotation to the bullet shells
+			const FRotator RandRotator = UKismetMathLibrary::RandomRotator();
+			const FRotator LerpedRot = UKismetMathLibrary::RLerp(
+				SocketTransform.GetRotation().Rotator(),
+				RandRotator,
+				.35f,
+				true
+				);
 			UWorld* World = GetWorld();
 			if (World)
 			{
 				World->SpawnActor<ACasing>(
 					CasingClass,
 					SocketTransform.GetLocation(),
-					SocketTransform.GetRotation().Rotator()
+					LerpedRot
 				);
 			}
 		}
