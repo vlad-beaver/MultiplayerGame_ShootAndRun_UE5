@@ -8,12 +8,24 @@
 #include "ShootAndRun/HUD/CharacterOverlay.h"
 #include "Components/ProgressBar.h"
 #include "Components/TextBlock.h"
+#include "ShootAndRun/Character/SarCharacter.h"
 
 void ASarPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
 	SarHUD = Cast<ASarHUD>(GetHUD());
+}
+
+void ASarPlayerController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	ASarCharacter* SarCharacter = Cast<ASarCharacter>(InPawn);
+	if (SarCharacter)
+	{
+		SetHUDHealth(SarCharacter->GetHealth(), SarCharacter->GetMaxHealth());
+	}
 }
 
 void ASarPlayerController::SetHUDHealth(float Health, float MaxHealth)

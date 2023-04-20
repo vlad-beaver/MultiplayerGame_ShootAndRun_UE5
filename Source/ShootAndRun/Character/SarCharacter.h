@@ -8,6 +8,7 @@
 #include "ShootAndRun/SarComponents/CombatComponent.h"
 #include "ShootAndRun/SarTypes/TurningInPlace.h"
 #include "ShootAndRun/Interfaces/InteractWithCrosshairsInterface.h"
+#include "Sound/SoundCue.h"
 #include "SarCharacter.generated.h"
 
 UCLASS()
@@ -27,6 +28,7 @@ public:
 	void Elim();
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastElim();
+	virtual void Destroyed() override;
 
 protected:
 	virtual void BeginPlay() override;
@@ -149,6 +151,19 @@ private:
 	//	Material instance set on Blueprint, used with the dynamic material instance
 	UPROPERTY(EditAnywhere, Category=Elim)
 	UMaterialInstance* DissolveMaterialInstance;
+
+	/*
+	 *	Elim bot
+	 */
+
+	UPROPERTY(EditAnywhere)
+	UParticleSystem* ElimBotEffect;
+
+	UPROPERTY(VisibleAnywhere)
+	UParticleSystemComponent* ElimBotComponent;
+
+	UPROPERTY(EditAnywhere)
+	class USoundCue* ElimBotSound;
 	
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);
@@ -162,4 +177,6 @@ public:
 	FORCEINLINE UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
+	FORCEINLINE float GetHealth() const { return Health; }
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; } 
 };
