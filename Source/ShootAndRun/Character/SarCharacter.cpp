@@ -12,6 +12,9 @@
 #include "Net/UnrealNetwork.h"
 #include "ShootAndRun/Weapon/Weapon.h"
 #include "ShootAndRun/ShootAndRun.h"
+#include "ShootAndRun/GameMode/SarGameMode.h"
+#include "ShootAndRun/PlayerController/SarPlayerController.h"
+#include "ShootAndRun/PlayerController/SarPlayerController.h"
 
 ASarCharacter::ASarCharacter()
 {
@@ -52,6 +55,7 @@ void ASarCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME_CONDITION(ASarCharacter, OverlappingWeapon, COND_OwnerOnly);
+	DOREPLIFETIME(ASarCharacter, Health);
 }
 
 void ASarCharacter::OnRep_ReplicatedMovement()
@@ -61,11 +65,22 @@ void ASarCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMoveReplication = 0.f;
 }
 
+void ASarCharacter::Elim_Implementation()
+{
+	bElimmed = true;
+	PlayElimMontage();
+}
+
 void ASarCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-}
+
+	UpdateHUDHealth();
+	if (HasAuthority())
+	{
+		OnTakeAnyDamage.AddDynamic(this, &ASarCharacter::ReceiveDamage);
+	}
+;}
 
 void ASarCharacter::Tick(float DeltaTime)
 {
@@ -130,6 +145,15 @@ void ASarCharacter::PlayFireMontage(bool bAiming)
 	}
 }
 
+void ASarCharacter::PlayElimMontage()
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && ElimMontage)
+	{
+		AnimInstance->Montage_Play(ElimMontage);
+	}
+}
+
 void ASarCharacter::PlayHitReactMontage()
 {
 	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
@@ -140,6 +164,25 @@ void ASarCharacter::PlayHitReactMontage()
 		AnimInstance->Montage_Play(HitReactMontage);
 		FName SectionName("FromFront");
 		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+}
+
+void ASarCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+	AController* InstigatorController, AActor* DamageCauser)
+{
+	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+
+	if((Health) == 0.f)
+	{
+		ASarGameMode* SarGameMode = GetWorld()->GetAuthGameMode<ASarGameMode>();
+		if (SarGameMode)
+		{
+			SarPlayerController = SarPlayerController == nullptr ? Cast<ASarPlayerController>(Controller) : SarPlayerController;
+			ASarPlayerController* AttackerController = Cast<ASarPlayerController>(InstigatorController);
+			SarGameMode->PlayerEliminated(this, SarPlayerController, AttackerController);
+		}
 	}
 }
 
@@ -360,11 +403,6 @@ void ASarCharacter::TurnInPlace(float DeltaTime)
 	}
 }
 
-void ASarCharacter::MulticastHit_Implementation()
-{
-	PlayHitReactMontage();
-}
-
 void ASarCharacter::HideCameraIfCharacterClose()
 {
 	if (!IsLocallyControlled()) return;
@@ -383,6 +421,21 @@ void ASarCharacter::HideCameraIfCharacterClose()
 		{
 			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
+	}
+}
+
+void ASarCharacter::OnRep_Health()
+{
+	UpdateHUDHealth();
+	PlayHitReactMontage();
+}
+
+void ASarCharacter::UpdateHUDHealth()
+{
+	SarPlayerController = SarPlayerController == nullptr ? Cast<ASarPlayerController>(Controller) : SarPlayerController;
+	if (SarPlayerController)
+	{
+		SarPlayerController->SetHUDHealth(Health, MaxHealth);
 	}
 }
 

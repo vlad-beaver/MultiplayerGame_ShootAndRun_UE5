@@ -3,3 +3,32 @@
 
 #include "SarPlayerController.h"
 
+#include "Components/ProgressBar.h"
+#include "ShootAndRun/HUD/SarHUD.h"
+#include "ShootAndRun/HUD/CharacterOverlay.h"
+#include "Components/ProgressBar.h"
+#include "Components/TextBlock.h"
+
+void ASarPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	SarHUD = Cast<ASarHUD>(GetHUD());
+}
+
+void ASarPlayerController::SetHUDHealth(float Health, float MaxHealth)
+{
+	SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
+
+	bool bHUDValid = SarHUD &&
+		SarHUD->CharacterOverlay &&
+			SarHUD->CharacterOverlay->HealthBar &&
+				SarHUD->CharacterOverlay->HealthText;
+	if(bHUDValid)
+	{
+		const float HealthPercent = Health / MaxHealth;
+		SarHUD->CharacterOverlay->HealthBar->SetPercent(HealthPercent);
+		FString HealthText = FString::Printf(TEXT("%d/%d"), FMath::CeilToInt(Health), FMath::CeilToInt(MaxHealth));
+		SarHUD->CharacterOverlay->HealthText->SetText(FText::FromString(HealthText));
+	}
+}
