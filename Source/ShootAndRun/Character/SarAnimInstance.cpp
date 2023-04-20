@@ -36,6 +36,7 @@ void USarAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	bIsCrouched = SarCharacter->bIsCrouched;
 	bAiming = SarCharacter->IsAiming();
 	TurningInPlace = SarCharacter->GetTurningInPlace();
+	bRotateRootBone = SarCharacter->ShouldRotateRootBone();
 
 	// Offset Yaw for Strafing
 	FRotator AimRotation = SarCharacter->GetBaseAimRotation();
