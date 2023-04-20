@@ -48,6 +48,8 @@ ASarCharacter::ASarCharacter()
 	TurningInPlace = ETurningInPlace::ETIP_NotTurning;
 	NetUpdateFrequency = 66.f;
 	MinNetUpdateFrequency = 33.f;
+
+	DissolveTimeline = CreateDefaultSubobject<UTimelineComponent>(TEXT("DissolveTimlineComponent"));
 }
 
 void ASarCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -65,10 +67,39 @@ void ASarCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMoveReplication = 0.f;
 }
 
-void ASarCharacter::Elim_Implementation()
+void ASarCharacter::Elim()
+{
+	MulticastElim();
+	GetWorldTimerManager().SetTimer(
+		ElimTimer,
+		this,
+		&ASarCharacter::ElimTimerFinished,
+		ElimDelay
+	);
+}
+
+void ASarCharacter::MulticastElim_Implementation()
 {
 	bElimmed = true;
 	PlayElimMontage();
+
+	if(DissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance = UMaterialInstanceDynamic::Create(DissolveMaterialInstance, this);
+		GetMesh()->SetMaterial(0, DynamicDissolveMaterialInstance);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), 0.55f);
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Glow"), 200.f);
+	}
+	StartDissolve();
+}
+
+void ASarCharacter::ElimTimerFinished()
+{
+	ASarGameMode* SarGameMode = GetWorld()->GetAuthGameMode<ASarGameMode>();
+	if (SarGameMode)
+	{
+		SarGameMode->RequestRespawn(this, Controller);
+	}
 }
 
 void ASarCharacter::BeginPlay()
@@ -436,6 +467,24 @@ void ASarCharacter::UpdateHUDHealth()
 	if (SarPlayerController)
 	{
 		SarPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void ASarCharacter::UpdateDisolveMaterial(float DissolveValue)
+{
+	if (DynamicDissolveMaterialInstance)
+	{
+		DynamicDissolveMaterialInstance->SetScalarParameterValue(TEXT("Dissolve"), DissolveValue);
+	}
+}
+
+void ASarCharacter::StartDissolve()
+{
+	DissolveTrack.BindDynamic(this, &ASarCharacter::UpdateDisolveMaterial);
+	if(DissolveCurve && DissolveTimeline)
+	{
+		DissolveTimeline->AddInterpFloat(DissolveCurve, DissolveTrack);
+		DissolveTimeline->Play();
 	}
 }
 

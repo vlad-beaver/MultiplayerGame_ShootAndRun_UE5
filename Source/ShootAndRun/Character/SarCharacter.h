@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "ShootAndRun/SarComponents/CombatComponent.h"
 #include "ShootAndRun/SarTypes/TurningInPlace.h"
@@ -23,9 +24,9 @@ public:
 	void PlayFireMontage(bool bAiming);
 	void PlayElimMontage();
 	virtual void OnRep_ReplicatedMovement() override;
-
-	UFUNCTION(NetMulticast, Reliable)
 	void Elim();
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastElim();
 
 protected:
 	virtual void BeginPlay() override;
@@ -118,6 +119,36 @@ private:
 	class ASarPlayerController* SarPlayerController;
 
 	bool bElimmed = false;
+
+	FTimerHandle ElimTimer;
+
+	UPROPERTY(EditDefaultsOnly)
+	float ElimDelay = 3.f;
+	
+	void ElimTimerFinished();
+
+	/*
+	 *	Dissolve effect
+	 */
+
+	UPROPERTY(VisibleAnywhere)
+	UTimelineComponent* DissolveTimeline;
+	FOnTimelineFloat DissolveTrack;
+
+	UPROPERTY(EditAnywhere)
+	UCurveFloat* DissolveCurve;
+
+	UFUNCTION()
+	void UpdateDisolveMaterial(float DissolveValue);
+	void StartDissolve();
+
+	//	Dynamic instance that we can change at runtime
+	UPROPERTY(VisibleAnywhere, Category=Elim)
+	UMaterialInstanceDynamic* DynamicDissolveMaterialInstance;
+
+	//	Material instance set on Blueprint, used with the dynamic material instance
+	UPROPERTY(EditAnywhere, Category=Elim)
+	UMaterialInstance* DissolveMaterialInstance;
 	
 public:
 	void SetOverlappingWeapon(AWeapon* Weapon);

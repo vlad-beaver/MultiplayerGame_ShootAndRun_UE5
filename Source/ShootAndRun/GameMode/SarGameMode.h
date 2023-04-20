@@ -16,4 +16,6 @@ class SHOOTANDRUN_API ASarGameMode : public AGameMode
 
 public:
 	virtual void PlayerEliminated(class ASarCharacter* ElimmedCharacter, class ASarPlayerController* VictimController, class ASarPlayerController* AttackerController);
+	virtual void RequestRespawn(class ACharacter* ElimmedCharacter, AController* ElimmedController); 
+
 };
