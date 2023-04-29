@@ -16,7 +16,7 @@
 #include "ShootAndRun/ShootAndRun.h"
 #include "ShootAndRun/GameMode/SarGameMode.h"
 #include "ShootAndRun/PlayerController/SarPlayerController.h"
-#include "ShootAndRun/PlayerController/SarPlayerController.h"
+#include "ShootAndRun/PlayerState/SarPlayerState.h"
 
 ASarCharacter::ASarCharacter()
 {
@@ -155,6 +155,16 @@ void ASarCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	UpdateHUDHealth();
+
+	if (SarPlayerController)
+	{
+		SarPlayerController->HideDeathMessage();
+		if (SarPlayerState)
+		{
+			SarPlayerState->UpdateDeathMessage(TEXT(""));
+		}
+	}
+
 	if (HasAuthority())
 	{
 		OnTakeAnyDamage.AddDynamic(this, &ASarCharacter::ReceiveDamage);
@@ -180,6 +190,7 @@ void ASarCharacter::Tick(float DeltaTime)
 	}
 	
 	HideCameraIfCharacterClose();
+	PollInit();
 }
 
 void ASarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -513,6 +524,19 @@ void ASarCharacter::UpdateHUDHealth()
 	if (SarPlayerController)
 	{
 		SarPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void ASarCharacter::PollInit()
+{
+	if (SarPlayerState == nullptr)
+	{
+		SarPlayerState = GetPlayerState<ASarPlayerState>();
+		if(SarPlayerState)
+		{
+			SarPlayerState->AddToScore(0.f);
+			SarPlayerState->AddToDefeats(0);
+		}
 	}
 }
 
