@@ -86,6 +86,10 @@ void ASarCharacter::Elim()
 
 void ASarCharacter::MulticastElim_Implementation()
 {
+	if(SarPlayerController)
+	{
+		SarPlayerController->SetHUDWeaponAmmo(0);
+	}
 	bElimmed = true;
 	PlayElimMontage();
 

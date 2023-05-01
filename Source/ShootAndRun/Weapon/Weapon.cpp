@@ -10,6 +10,7 @@
 #include "Casing.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "ShootAndRun/PlayerController/SarPlayerController.h"
 
 AWeapon::AWeapon()
 {
@@ -60,6 +61,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME(AWeapon, Ammo);
 }
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -81,6 +83,47 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlapComponent, AActor* 
 		SarCharacter->SetOverlappingWeapon(nullptr);
 	}
 }
+
+void AWeapon::SetHUDAmmo()
+{
+	SarOwnerCharacter = SarOwnerCharacter == nullptr ? Cast<ASarCharacter>(GetOwner()) : SarOwnerCharacter;
+	if (SarOwnerCharacter)
+	{
+		SarOwnerController = SarOwnerController == nullptr ? Cast<ASarPlayerController>(SarOwnerCharacter->Controller) : SarOwnerController;
+		if (SarOwnerController)
+		{
+			SarOwnerController->SetHUDWeaponAmmo(Ammo);
+		}
+	}
+}
+
+
+void AWeapon::SpendRound()
+{
+	--Ammo;
+	SetHUDAmmo();
+}
+
+void AWeapon::OnRep_Ammo()
+{
+	SarOwnerCharacter = SarOwnerCharacter == nullptr ? Cast<ASarCharacter>(GetOwner()) : SarOwnerCharacter;
+	SetHUDAmmo();
+}
+
+void AWeapon::OnRep_Owner()
+{
+	Super::OnRep_Owner();
+	if(Owner == nullptr)
+	{
+		SarOwnerCharacter = nullptr;
+		SarOwnerController = nullptr;
+	}
+	else
+	{
+		SetHUDAmmo();
+	}
+}
+
 
 void AWeapon::SetWeaponState(EWeaponState State)
 {
@@ -163,6 +206,7 @@ void AWeapon::Fire(const FVector& HitTarget)
 			}
 		}
 	}
+	SpendRound();
 }
 
 void AWeapon::Dropped()
@@ -171,4 +215,6 @@ void AWeapon::Dropped()
 	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
 	WeaponMesh->DetachFromComponent(DetachRules);
 	SetOwner(nullptr);
+	SarOwnerCharacter = nullptr;
+	SarOwnerController = nullptr;
 }
