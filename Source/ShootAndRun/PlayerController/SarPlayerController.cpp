@@ -85,6 +85,19 @@ void ASarPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 	}
 }
 
+void ASarPlayerController::SetHUDCarriedAmmo(int32 Ammo)
+{
+	SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
+	bool bHUDValid = SarHUD &&
+		SarHUD->CharacterOverlay &&
+			SarHUD->CharacterOverlay->CarriedAmmoAmount;
+	if (bHUDValid)
+	{
+		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
+		SarHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+}
+
 void ASarPlayerController::UpdateDeathMessage(const FString KilledBy)
 {
 	SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
