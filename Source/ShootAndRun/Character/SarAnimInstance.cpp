@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "ShootAndRun/Weapon/Weapon.h"
+#include "ShootAndRun/SarTypes/CombatState.h"
 
 void USarAnimInstance::NativeInitializeAnimation()
 {
@@ -73,4 +74,8 @@ void USarAnimInstance::NativeUpdateAnimation(float DeltaTime)
 			RightHandRotation = FMath::RInterpTo(RightHandRotation, LookAtRotation, DeltaTime, 30.f);
 		}
 	}
+
+	bUseFABRIK = SarCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bUseAimOffsets = SarCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	bTransformRightHand = SarCharacter->GetCombatState() != ECombatState::ECS_Reloading;
 }

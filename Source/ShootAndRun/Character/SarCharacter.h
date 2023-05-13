@@ -9,6 +9,7 @@
 #include "ShootAndRun/SarTypes/TurningInPlace.h"
 #include "ShootAndRun/Interfaces/InteractWithCrosshairsInterface.h"
 #include "Sound/SoundCue.h"
+#include "ShootAndRun/SarTypes/CombatState.h"
 #include "SarCharacter.generated.h"
 
 UCLASS()
@@ -23,6 +24,7 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	virtual void PostInitializeComponents() override;
 	void PlayFireMontage(bool bAiming);
+	void PlayReloadMontage();
 	void PlayElimMontage();
 	virtual void OnRep_ReplicatedMovement() override;
 	void Elim();
@@ -39,6 +41,7 @@ protected:
 	void LookUp(float Value);
 	void EquipButtonPressed();
 	void CrouchButtonPressed();
+	void ReloadButtonPressed();
 	void AimButtonPressed();
 	void AimButtonReleased();
 	void CalculateAO_Pitch();
@@ -71,7 +74,7 @@ private:
 	UFUNCTION()
 	void OnRep_OverlappingWeapon(AWeapon* LastWeapon);
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UCombatComponent* Combat;
 
 	UFUNCTION(Server, Reliable)
@@ -85,8 +88,15 @@ private:
 	ETurningInPlace TurningInPlace;
 	void TurnInPlace(float DeltaTime);
 
+	/*
+	 *	Animation montage
+	 */
+
 	UPROPERTY(EditAnywhere, Category=Combat)
 	class UAnimMontage* FireWeaponMontage;
+
+	UPROPERTY(EditAnywhere, Category=Combat)
+	UAnimMontage* ReloadMontage;
 
 	UPROPERTY(EditAnywhere, Category=Combat)
 	UAnimMontage* HitReactMontage;
@@ -184,5 +194,6 @@ public:
 	FORCEINLINE bool ShouldRotateRootBone() const { return bRotateRootBone; }
 	FORCEINLINE bool IsElimmed() const { return bElimmed; }
 	FORCEINLINE float GetHealth() const { return Health; }
-	FORCEINLINE float GetMaxHealth() const { return MaxHealth; } 
+	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
+	ECombatState GetCombatState() const; 
 };
