@@ -3,12 +3,17 @@
 
 #include "SarGameMode.h"
 
-#include "EnvironmentQuery/EnvQueryTypes.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
 #include "ShootAndRun/Character/SarCharacter.h"
 #include "ShootAndRun/PlayerController/SarPlayerController.h"
 #include "ShootAndRun/PlayerState/SarPlayerState.h"
+#include "ShootAndRun/GameState/SarGameState.h"
+
+namespace MatchState
+{
+	const FName Cooldown = FName("Cooldown");
+}
 
 ASarGameMode::ASarGameMode()
 {
@@ -34,6 +39,22 @@ void ASarGameMode::Tick(float DeltaTime)
 			StartMatch();
 		}
 	}
+	else if (MatchState == MatchState::InProgress)
+	{
+		CountdownTime = WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f)
+		{
+			SetMatchState(MatchState::Cooldown);
+		}
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		CountdownTime = CooldownTime + WarmupTime + MatchTime - GetWorld()->GetTimeSeconds() + LevelStartingTime;
+		if (CountdownTime <= 0.f)
+		{
+			RestartGame();
+		}
+	}
 }
 
 void ASarGameMode::OnMatchStateSet()
@@ -56,10 +77,13 @@ void ASarGameMode::PlayerEliminated(ASarCharacter* ElimmedCharacter, ASarPlayerC
 	ASarPlayerState* AttackerPlayerState = AttackerController ? Cast<ASarPlayerState>(AttackerController->PlayerState) : nullptr;
 	ASarPlayerState* VictimPlayerState = VictimController ? Cast<ASarPlayerState>(VictimController->PlayerState) : nullptr;
 
+	ASarGameState* SarGameState = GetGameState<ASarGameState>();
+	
 	//	Add kills to kill counter
-	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState)
+	if(AttackerPlayerState && AttackerPlayerState != VictimPlayerState && SarGameState)
 	{
 		AttackerPlayerState->AddToScore(1.f);
+		SarGameState->UpdateTopScore(AttackerPlayerState);
 	}
 	if (VictimPlayerState)
 	{

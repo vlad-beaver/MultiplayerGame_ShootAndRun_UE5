@@ -16,6 +16,8 @@
 #include "ShootAndRun/HUD/Announcement.h"
 #include "Kismet/GameplayStatics.h"
 #include "Math/UnitConversion.h"
+#include "ShootAndRun/SarComponents/CombatComponent.h"
+#include "ShootAndRun/GameState/SarGameState.h"
 
 void ASarPlayerController::BeginPlay()
 {
@@ -58,9 +60,10 @@ void ASarPlayerController::ServerCheckMatchState_Implementation()
 	{
 		WarmupTime = GameMode->WarmupTime;
 		MatchTime = GameMode->MatchTime;
+		CooldownTime = GameMode->CooldownTime;
 		LevelStartingTime = GameMode->LevelStartingTime;
 		MatchState = GameMode->GetMatchState();
-		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, LevelStartingTime);
+		ClientJoinMidgame(MatchState, WarmupTime, MatchTime, CooldownTime, LevelStartingTime);
 
 		if(SarHUD && MatchState == MatchState::WaitingToStart)
 		{
@@ -69,10 +72,11 @@ void ASarPlayerController::ServerCheckMatchState_Implementation()
 	}
 }
 
-void ASarPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float StartingTime)
+void ASarPlayerController::ClientJoinMidgame_Implementation(FName StateOfMatch, float Warmup, float Match, float Cooldown, float StartingTime)
 {
 	WarmupTime = Warmup;
 	MatchTime = Match;
+	CooldownTime = Cooldown;
 	LevelStartingTime = StartingTime;
 	MatchState = StateOfMatch;
 	OnMatchStateSet(MatchState);
@@ -186,6 +190,12 @@ void ASarPlayerController::SetHUDMatchCountdown(float CountdownTime)
 			SarHUD->CharacterOverlay->MatchCountdownText;
 	if (bHUDValid)
 	{
+		if (CountdownTime < 0.f)
+		{
+			SarHUD->CharacterOverlay->MatchCountdownText->SetText(FText());
+			return;
+		}
+		
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
 		
@@ -202,6 +212,12 @@ void ASarPlayerController::SetHUDAnnouncementCountdown(float CountdownTime)
 			SarHUD->Announcement->WarmupTime;
 	if (bHUDValid)
 	{
+		if (CountdownTime < 0.f)
+		{
+			SarHUD->Announcement->WarmupTime->SetText(FText());
+			return;
+		}
+		
 		int32 Minutes = FMath::FloorToInt(CountdownTime / 60.f);
 		int32 Seconds = CountdownTime - Minutes * 60;
 		
@@ -214,7 +230,7 @@ void ASarPlayerController::SetHUDTime()
 {
 	if(HasAuthority())
 	{
-		ASarGameMode* SarGameMode = Cast<ASarGameMode>(UGameplayStatics::GetGameMode(this));
+		SarGameMode = SarGameMode == nullptr ? Cast<ASarGameMode>(UGameplayStatics::GetGameMode(this)) : SarGameMode;
 		if(SarGameMode)
 		{
 			LevelStartingTime = SarGameMode->LevelStartingTime;
@@ -224,11 +240,21 @@ void ASarPlayerController::SetHUDTime()
 	float TimeLeft = 0.f;
 	if (MatchState == MatchState::WaitingToStart) TimeLeft = WarmupTime - GetServerTime() + LevelStartingTime;
 	else if (MatchState == MatchState::InProgress) TimeLeft = WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
-	
+	else if (MatchState == MatchState::Cooldown) TimeLeft = CooldownTime + WarmupTime + MatchTime - GetServerTime() + LevelStartingTime;
 	uint32 SecondsLeft = FMath::CeilToInt(TimeLeft);
+
+	if (HasAuthority())
+	{
+		SarGameMode = SarGameMode == nullptr ? Cast<ASarGameMode>(UGameplayStatics::GetGameMode(this)) : SarGameMode;
+		if (SarGameMode)
+		{
+			SecondsLeft = FMath::CeilToInt(SarGameMode->GetCountdownTime() + LevelStartingTime);
+		}
+	}
+	
 	if (CountdownInt != SecondsLeft)
 	{
-		if (MatchState == MatchState::WaitingToStart)
+		if (MatchState == MatchState::WaitingToStart || MatchState == MatchState::Cooldown)
 		{
 			SetHUDAnnouncementCountdown(TimeLeft);
 		}
@@ -294,6 +320,10 @@ void ASarPlayerController::OnMatchStateSet(FName State)
 	{
 		HandleMatchHasStarted();
 	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
+	}
 }
 
 void ASarPlayerController::OnRep_MatchState()
@@ -301,6 +331,10 @@ void ASarPlayerController::OnRep_MatchState()
 	if (MatchState == MatchState::InProgress)
 	{
 		HandleMatchHasStarted();
+	}
+	else if (MatchState == MatchState::Cooldown)
+	{
+		HandleCooldown();
 	}
 }
 
@@ -314,6 +348,61 @@ void ASarPlayerController::HandleMatchHasStarted()
 		{
 			SarHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
 		}
+	}
+}
+
+void ASarPlayerController::HandleCooldown()
+{
+	SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
+	if (SarHUD)
+	{
+		SarHUD->CharacterOverlay->RemoveFromParent();
+		bool bHUDValid = SarHUD->Announcement &&
+				SarHUD->Announcement->AnnouncementText &&
+				SarHUD->Announcement->InfoText;
+		
+		if (bHUDValid)
+		{
+			SarHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
+			FString AnnouncementText("New Match Starts In:");
+			SarHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
+
+			ASarGameState* SarGameState = Cast<ASarGameState>(UGameplayStatics::GetGameState(this));
+			ASarPlayerState* SarPlayerState = GetPlayerState<ASarPlayerState>(); 
+			if (SarGameState && SarPlayerState)
+			{
+				TArray<ASarPlayerState*> TopPlayers = SarGameState->TopScoringPlayers;
+				FString InfoTextString;
+				if (TopPlayers.Num() == 0)
+				{
+					InfoTextString = FString("There is no winner.");
+				}
+				else if (TopPlayers.Num() == 1 && TopPlayers[0] == SarPlayerState)
+				{
+					InfoTextString = FString("You are the winner!");
+				}
+				else if (TopPlayers.Num() == 1)
+				{
+					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopPlayers[0]->GetPlayerName());
+				}
+				else if (TopPlayers.Num() > 1)
+				{
+					InfoTextString = FString("Players tied for the win:\n");
+					for (auto TiedPlayer : TopPlayers)
+					{
+						InfoTextString.Append(FString::Printf(TEXT("%s\n"), *TiedPlayer->GetPlayerName()));
+					}
+				}
+				
+				SarHUD->Announcement->InfoText->SetText(FText::FromString(InfoTextString));
+			}
+		}
+	}
+	ASarCharacter* SarCharacter = Cast<ASarCharacter>(GetPawn());
+	if (SarCharacter && SarCharacter->GetCombat())
+	{
+		SarCharacter->bDisableGameplay = true;
+		SarCharacter->GetCombat()->FireButtonPressed(false);
 	}
 }
 

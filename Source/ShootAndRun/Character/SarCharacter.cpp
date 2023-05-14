@@ -61,6 +61,7 @@ void ASarCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME_CONDITION(ASarCharacter, OverlappingWeapon, COND_OwnerOnly);
 	DOREPLIFETIME(ASarCharacter, Health);
+	DOREPLIFETIME(ASarCharacter, bDisableGameplay);
 }
 
 void ASarCharacter::OnRep_ReplicatedMovement()
@@ -105,11 +106,10 @@ void ASarCharacter::MulticastElim_Implementation()
 	StartDissolve();
 
 	//	Disable character movement
-	GetCharacterMovement()->DisableMovement();
-	GetCharacterMovement()->StopMovementImmediately();
-	if(SarPlayerController)
+	bDisableGameplay = true;
+	if (Combat)
 	{
-		DisableInput(SarPlayerController);
+		Combat->FireButtonPressed(false);
 	}
 	//	Dissable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -153,6 +153,13 @@ void ASarCharacter::Destroyed()
 	{
 		ElimBotComponent->DestroyComponent();
 	}
+
+	ASarGameMode* SarGameMode = Cast<ASarGameMode>(UGameplayStatics::GetGameMode(this));
+	bool bMatchNotInProgress = SarGameMode && SarGameMode->GetMatchState() != MatchState::InProgress;
+	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
+	{
+		Combat->EquippedWeapon->Destroy();
+	}
 }
 
 void ASarCharacter::BeginPlay()
@@ -179,7 +186,20 @@ void ASarCharacter::BeginPlay()
 void ASarCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
+	RotateInPlace(DeltaTime);
+	HideCameraIfCharacterClose();
+	PollInit();
+}
 
+void ASarCharacter::RotateInPlace(float DeltaTime)
+{
+	if (bDisableGameplay)
+	{
+		bUseControllerRotationYaw = false;
+		TurningInPlace = ETurningInPlace::ETIP_NotTurning;
+		return;
+	}
 	if (GetLocalRole() > ENetRole::ROLE_SimulatedProxy && IsLocallyControlled())
 	{
 		AimOffset(DeltaTime);
@@ -193,9 +213,6 @@ void ASarCharacter::Tick(float DeltaTime)
 		}
 		CalculateAO_Pitch();
 	}
-	
-	HideCameraIfCharacterClose();
-	PollInit();
 }
 
 void ASarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -305,6 +322,7 @@ void ASarCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDam
 
 void ASarCharacter::MoveForward(float Value)
 {
+	if (bDisableGameplay) return;
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -315,6 +333,7 @@ void ASarCharacter::MoveForward(float Value)
 
 void ASarCharacter::MoveRight(float Value)
 {
+	if (bDisableGameplay) return;
 	if (Controller != nullptr && Value != 0.f)
 	{
 		const FRotator YawRotation(0.f, Controller->GetControlRotation().Yaw, 0.f);
@@ -335,6 +354,7 @@ void ASarCharacter::LookUp(float Value)
 
 void ASarCharacter::EquipButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		if (HasAuthority())
@@ -358,6 +378,7 @@ void ASarCharacter::ServerEquipButtonPressed_Implementation()
 
 void ASarCharacter::CrouchButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -370,6 +391,7 @@ void ASarCharacter::CrouchButtonPressed()
 
 void ASarCharacter::ReloadButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->Reload();
@@ -378,6 +400,7 @@ void ASarCharacter::ReloadButtonPressed()
 
 void ASarCharacter::AimButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->SetAiming(true);
@@ -386,6 +409,7 @@ void ASarCharacter::AimButtonPressed()
 
 void ASarCharacter::AimButtonReleased()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->SetAiming(false);
@@ -478,6 +502,7 @@ void ASarCharacter::SimProxiesTurn()
 
 void ASarCharacter::Jump()
 {
+	if (bDisableGameplay) return;
 	if (bIsCrouched)
 	{
 		UnCrouch();
@@ -490,6 +515,7 @@ void ASarCharacter::Jump()
 
 void ASarCharacter::FireButtonPressed()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->FireButtonPressed(true);
@@ -498,6 +524,7 @@ void ASarCharacter::FireButtonPressed()
 
 void ASarCharacter::FireButtonReleased()
 {
+	if (bDisableGameplay) return;
 	if (Combat)
 	{
 		Combat->FireButtonPressed(false);
