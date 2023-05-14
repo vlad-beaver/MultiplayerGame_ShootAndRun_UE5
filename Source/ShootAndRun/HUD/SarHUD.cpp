@@ -4,14 +4,12 @@
 #include "SarHUD.h"
 #include "GameFramework/PlayerController.h"
 #include "CharacterOverlay.h"
-
+#include "Announcement.h"
 #include "Blueprint/UserWidget.h"
 
 void ASarHUD::BeginPlay()
 {
 	Super::BeginPlay();
-
-	AddCharacterOverlay();
 }
 
 void ASarHUD::AddCharacterOverlay()
@@ -21,6 +19,16 @@ void ASarHUD::AddCharacterOverlay()
 	{
 		CharacterOverlay = CreateWidget<UCharacterOverlay>(PlayerController, CharacterOverlayClass);
 		CharacterOverlay->AddToViewport();
+	}
+}
+
+void ASarHUD::AddAnnouncement()
+{
+	APlayerController* PlayerController = GetOwningPlayerController();
+	if(PlayerController && AnnouncementClass && Announcement == nullptr)
+	{
+		Announcement = CreateWidget<UAnnouncement>(PlayerController, AnnouncementClass);
+		Announcement->AddToViewport();
 	}
 }
 
