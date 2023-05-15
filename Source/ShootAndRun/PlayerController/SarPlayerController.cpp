@@ -343,7 +343,7 @@ void ASarPlayerController::HandleMatchHasStarted()
 	SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
 	if (SarHUD)
 	{
-		SarHUD->AddCharacterOverlay();
+		if (SarHUD->CharacterOverlay == nullptr) SarHUD->AddCharacterOverlay();
 		if (SarHUD->Announcement)
 		{
 			SarHUD->Announcement->SetVisibility(ESlateVisibility::Hidden);
