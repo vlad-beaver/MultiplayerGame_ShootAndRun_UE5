@@ -53,6 +53,12 @@ protected:
 	void HandleReload();
 	int32 AmountToReload();
 
+	void DropEquippedWeapon();
+	void AttachActorToRightHand(AActor* ActorToAttach);
+	void UpdateCarriedAmmo();
+	void PlayEquipWeaponSound();
+	void ReloadEmptyWeapon();
+
 private:
 	UPROPERTY()
 	class ASarCharacter* Character;

@@ -275,10 +275,10 @@ void ASarCharacter::PlayReloadMontage()
 			SectionName = FName("Rifle");
 			break;
 		case EWeaponType::EWT_Pistol:
-			SectionName = FName("Rifle");
+			SectionName = FName("Pistol");
 			break;
 		case EWeaponType::EWT_GrenadeLauncher:
-			SectionName = FName("Rifle");
+			SectionName = FName("GrenadeLauncher");
 			break;
 		}
 		
@@ -311,6 +311,7 @@ void ASarCharacter::PlayHitReactMontage()
 void ASarCharacter::ReceiveDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
 	AController* InstigatorController, AActor* DamageCauser)
 {
+	if (bElimmed) return;
 	Health = FMath::Clamp(Health - Damage, 0.f, MaxHealth);
 	UpdateHUDHealth();
 	PlayHitReactMontage();
