@@ -167,6 +167,7 @@ void ASarCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	UpdateHUDAmmo();
 	UpdateHUDHealth();
 
 	if (SarPlayerController)
@@ -365,14 +366,7 @@ void ASarCharacter::EquipButtonPressed()
 	if (bDisableGameplay) return;
 	if (Combat)
 	{
-		if (HasAuthority())
-		{
-			Combat->EquipWeapon(OverlappingWeapon);
-		}
-		else
-		{
-			ServerEquipButtonPressed();
-		}
+		ServerEquipButtonPressed();
 	}
 }
 
@@ -594,6 +588,16 @@ void ASarCharacter::UpdateHUDHealth()
 	if (SarPlayerController)
 	{
 		SarPlayerController->SetHUDHealth(Health, MaxHealth);
+	}
+}
+
+void ASarCharacter::UpdateHUDAmmo()
+{
+	SarPlayerController = SarPlayerController == nullptr ? Cast<ASarPlayerController>(Controller) : SarPlayerController;
+	if (SarPlayerController && Combat && Combat->EquippedWeapon)
+	{
+		SarPlayerController->SetHUDCarriedAmmo(Combat->CarriedAmmo);
+		SarPlayerController->SetHUDWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
 	}
 }
 

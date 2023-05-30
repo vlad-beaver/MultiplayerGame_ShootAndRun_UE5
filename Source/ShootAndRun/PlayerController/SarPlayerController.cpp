@@ -3,6 +3,7 @@
 
 #include "SarPlayerController.h"
 
+#include "Components/Image.h"
 #include "Components/ProgressBar.h"
 #include "ShootAndRun/HUD/SarHUD.h"
 #include "ShootAndRun/HUD/CharacterOverlay.h"
@@ -18,6 +19,7 @@
 #include "Math/UnitConversion.h"
 #include "ShootAndRun/SarComponents/CombatComponent.h"
 #include "ShootAndRun/GameState/SarGameState.h"
+#include "Components/Image.h"
 
 void ASarPlayerController::BeginPlay()
 {
@@ -41,6 +43,37 @@ void ASarPlayerController::Tick(float DeltaTime)
 	SetHUDTime();
 	CheckTimeSync(DeltaTime);
 	PollInit();
+	CheckPing(DeltaTime);
+}
+
+void ASarPlayerController::CheckPing(float DeltaTime)
+{
+	HighPingRunningTime += DeltaTime;
+	if (HighPingRunningTime > CheckPingFrequency)
+	{
+		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
+		if (PlayerState)
+		{
+			if (PlayerState->GetPing() * 4 > HighPingThreshold)	//	Ping is compressed; it's actually ping / 4
+				{
+				HighPingWarning();
+				PingAnimationRunningTime = 0.f;
+				}
+		}
+		HighPingRunningTime = 0.f;
+	}
+	bool bHighPingAnimationPlaying =
+		SarHUD && SarHUD->CharacterOverlay &&
+			SarHUD->CharacterOverlay->HighPingAnimation &&
+				SarHUD->CharacterOverlay->IsAnimationPlaying(SarHUD->CharacterOverlay->HighPingAnimation);
+	if (bHighPingAnimationPlaying)
+	{
+		PingAnimationRunningTime += DeltaTime;
+		if (PingAnimationRunningTime > HighPingDuration)
+		{
+			StopHighPingWarning();
+		}
+	}
 }
 
 void ASarPlayerController::CheckTimeSync(float DeltaTime)
@@ -50,6 +83,40 @@ void ASarPlayerController::CheckTimeSync(float DeltaTime)
 	{
 		ServerRequestServerTime(GetWorld()->GetTimeSeconds());
 		TimeSyncRunningTime = 0.f;
+	}
+}
+
+void ASarPlayerController::HighPingWarning()
+{
+	SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
+	bool bHUDValid = SarHUD &&
+		SarHUD->CharacterOverlay &&
+			SarHUD->CharacterOverlay->HighPingImage &&
+				SarHUD->CharacterOverlay->HighPingAnimation;
+	if(bHUDValid)
+	{
+		SarHUD->CharacterOverlay->HighPingImage->SetOpacity(1.f);
+		SarHUD->CharacterOverlay->PlayAnimation(
+			SarHUD->CharacterOverlay->HighPingAnimation,
+			0.f,
+			5);
+	}
+}
+
+void ASarPlayerController::StopHighPingWarning()
+{
+	SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
+	bool bHUDValid = SarHUD &&
+		SarHUD->CharacterOverlay &&
+			SarHUD->CharacterOverlay->HighPingImage &&
+				SarHUD->CharacterOverlay->HighPingAnimation;
+	if(bHUDValid)
+	{
+		SarHUD->CharacterOverlay->HighPingImage->SetOpacity(0.f);
+		if (SarHUD->CharacterOverlay->IsAnimationPlaying(SarHUD->CharacterOverlay->HighPingAnimation))
+		{
+			SarHUD->CharacterOverlay->StopAnimation(SarHUD->CharacterOverlay->HighPingAnimation);
+		}
 	}
 }
 
@@ -114,7 +181,7 @@ void ASarPlayerController::SetHUDHealth(float Health, float MaxHealth)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeHealth = true;
 		HUDHealth = Health;
 		HUDMaxHealth = MaxHealth;
 	}
@@ -133,7 +200,7 @@ void ASarPlayerController::SetHUDScore(float Score)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeScore = true;
 		HUDScore = Score;
 	}
 }
@@ -151,7 +218,7 @@ void ASarPlayerController::SetHUDDefeats(int32 Defeats)
 	}
 	else
 	{
-		bInitializeCharacterOverlay = true;
+		bInitializeDefeats = true;
 		HUDDefeats = Defeats;
 	}
 }
@@ -167,6 +234,11 @@ void ASarPlayerController::SetHUDWeaponAmmo(int32 Ammo)
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		SarHUD->CharacterOverlay->WeaponAmmoAmount->SetText(FText::FromString(AmmoText));
 	}
+	else
+	{
+		bInitializeWeaponAmmo = true;
+		HUDWeaponAmmo = Ammo;
+	}
 }
 
 void ASarPlayerController::SetHUDCarriedAmmo(int32 Ammo)
@@ -179,6 +251,11 @@ void ASarPlayerController::SetHUDCarriedAmmo(int32 Ammo)
 	{
 		FString AmmoText = FString::Printf(TEXT("%d"), Ammo);
 		SarHUD->CharacterOverlay->CarriedAmmoAmount->SetText(FText::FromString(AmmoText));
+	}
+	else
+	{
+		bInitializeCarriedAmmo = true;
+		HUDCarriedAmmo = Ammo;
 	}
 }
 
@@ -276,9 +353,11 @@ void ASarPlayerController::PollInit()
 			CharacterOverlay = SarHUD->CharacterOverlay;
 			if (CharacterOverlay)
 			{
-				SetHUDHealth(HUDHealth, HUDMaxHealth);
-				SetHUDScore(HUDScore);
-				SetHUDDefeats(HUDDefeats);
+				if (bInitializeHealth) SetHUDHealth(HUDHealth, HUDMaxHealth);
+				if (bInitializeScore) SetHUDScore(HUDScore);
+				if (bInitializeDefeats) SetHUDDefeats(HUDDefeats);
+				if (bInitializeCarriedAmmo) SetHUDCarriedAmmo(HUDCarriedAmmo);
+				if (bInitializeWeaponAmmo) SetHUDWeaponAmmo(HUDWeaponAmmo);
 			}
 		}
 	}
