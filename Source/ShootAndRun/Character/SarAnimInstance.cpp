@@ -76,6 +76,10 @@ void USarAnimInstance::NativeUpdateAnimation(float DeltaTime)
 	}
 
 	bUseFABRIK = SarCharacter->GetCombatState() != ECombatState::ECS_Reloading;
+	if (SarCharacter->IsLocallyControlled())
+	{
+		bUseFABRIK = !SarCharacter->IsLocallyReloading();
+	}
 	bUseAimOffsets = SarCharacter->GetCombatState() != ECombatState::ECS_Reloading && !SarCharacter->GetDisableGameplay();
 	bTransformRightHand = SarCharacter->GetCombatState() != ECombatState::ECS_Reloading && !SarCharacter->GetDisableGameplay();
 }

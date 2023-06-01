@@ -10,6 +10,8 @@
 #include "WeaponTypes.h"
 
 #include "DrawDebugHelpers.h"
+#include "ShootAndRun/PlayerController/SarPlayerController.h"
+#include "ShootAndRun/SarComponents/LagCompensationComponent.h"
 
 
 void AHitScanWeapon::Fire(const FVector& HitTarget)
@@ -30,15 +32,33 @@ void AHitScanWeapon::Fire(const FVector& HitTarget)
 		WeaponTraceHit(Start, HitTarget, FireHit);
 
 		ASarCharacter* SarCharacter = Cast<ASarCharacter>(FireHit.GetActor());
-		if (SarCharacter && HasAuthority() && InstigatorController)
+		if (SarCharacter && InstigatorController)
 		{
-			UGameplayStatics::ApplyDamage(
-				SarCharacter,
-				Damage,
-				InstigatorController,
-				this,
-				UDamageType::StaticClass()
+			if (HasAuthority() && !bUseServerSideRewind)
+			{
+				UGameplayStatics::ApplyDamage(
+					SarCharacter,
+					Damage,
+					InstigatorController,
+					this,
+					UDamageType::StaticClass()
 				);
+			}
+			if (!HasAuthority() && bUseServerSideRewind)
+			{
+				SarOwnerCharacter = SarOwnerCharacter == nullptr ? Cast<ASarCharacter>(OwnerPawn) : SarOwnerCharacter;
+				SarOwnerController = SarOwnerController == nullptr ? Cast<ASarPlayerController>(InstigatorController) : SarOwnerController;
+				if (SarOwnerController && SarOwnerCharacter && SarOwnerCharacter->GetLagCompensation())
+				{
+					SarOwnerCharacter->GetLagCompensation()->ServerScoreRequest(
+						SarCharacter,
+						Start,
+						HitTarget,
+						SarOwnerController->GetServerTime() - SarOwnerController->SingleTripTime,
+						this
+					);
+				}
+			}
 		}
 		if (ImpactParticles)
 		{
