@@ -71,6 +71,7 @@ void AWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeP
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeapon, WeaponState);
+	DOREPLIFETIME_CONDITION(AWeapon, bUseServerSideRewind, COND_OwnerOnly);
 }
 
 void AWeapon::OnSphereOverlap(UPrimitiveComponent* OverlapComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -181,6 +182,11 @@ void AWeapon::OnWeaponStateSet()
 	}
 }
 
+void AWeapon::OnPingTooHigh(bool bPingTooHigh)
+{
+	bUseServerSideRewind = !bPingTooHigh;
+}
+
 void AWeapon::OnRep_WeaponState()
 {
 	OnWeaponStateSet();
@@ -194,6 +200,16 @@ void AWeapon::OnEquipped()
 	WeaponMesh->SetEnableGravity(false);
 	WeaponMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	EnableCustomDepth(false);
+	
+	SarOwnerCharacter = SarOwnerCharacter == nullptr ? Cast<ASarCharacter>(GetOwner()) : SarOwnerCharacter;
+	if (SarOwnerCharacter && bUseServerSideRewind)
+	{
+		SarOwnerController = SarOwnerController == nullptr ? Cast<ASarPlayerController>(SarOwnerCharacter->Controller) : SarOwnerController;
+		if (SarOwnerController && HasAuthority() && !SarOwnerController->HighPingDelegate.IsBound())
+		{
+			SarOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+		}
+	}
 }
 
 void AWeapon::OnDropped()
@@ -212,6 +228,16 @@ void AWeapon::OnDropped()
 	WeaponMesh->SetCustomDepthStencilValue(CUSTOM_DEPTH_BLUE);
 	WeaponMesh->MarkRenderStateDirty();
 	EnableCustomDepth(true);
+	
+	SarOwnerCharacter = SarOwnerCharacter == nullptr ? Cast<ASarCharacter>(GetOwner()) : SarOwnerCharacter;
+	if (SarOwnerCharacter)
+	{
+		SarOwnerController = SarOwnerController == nullptr ? Cast<ASarPlayerController>(SarOwnerCharacter->Controller) : SarOwnerController;
+		if (SarOwnerController && HasAuthority() && !SarOwnerController->HighPingDelegate.IsBound())
+		{
+			SarOwnerController->HighPingDelegate.AddDynamic(this, &AWeapon::OnPingTooHigh);
+		}
+	}
 }
 
 void AWeapon::ShowPickupWidget(bool bShowWidget)

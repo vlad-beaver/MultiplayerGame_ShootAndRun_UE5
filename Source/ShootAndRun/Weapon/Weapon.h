@@ -122,13 +122,16 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float Damage = 20.f;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Replicated, EditAnywhere)
 	bool bUseServerSideRewind = false;
 
 	UPROPERTY()
 	class ASarCharacter* SarOwnerCharacter;
 	UPROPERTY()
 	class ASarPlayerController* SarOwnerController;
+	
+	UFUNCTION()
+	void OnPingTooHigh(bool bPingTooHigh);
 
 private:
 	UPROPERTY(VisibleAnywhere, Category="Weapon Properties")

@@ -40,8 +40,8 @@ ASarCharacter::ASarCharacter()
 	OverheadWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("OverheadWidget"));
 	OverheadWidget->SetupAttachment(RootComponent);
 
-	Combat = CreateDefaultSubobject<UCombatComponent>("CombatComponent");
-	Combat->SetIsReplicated(true);
+	CombatComp = CreateDefaultSubobject<UCombatComponent>(TEXT("CombatComponent"));
+	CombatComp->SetIsReplicated(true);
 
 	LagCompensation = CreateDefaultSubobject<ULagCompensationComponent>("LagCompensation");
 
@@ -64,94 +64,86 @@ ASarCharacter::ASarCharacter()
 
 	head = CreateDefaultSubobject<UBoxComponent>(TEXT("head"));
 	head->SetupAttachment(GetMesh(), FName("head"));
-	head->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("head"), head);
 
 	pelvis = CreateDefaultSubobject<UBoxComponent>(TEXT("pelvis"));
 	pelvis->SetupAttachment(GetMesh(), FName("pelvis"));
-	pelvis->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("pelvis"), pelvis);
 	
 	spine_02 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_02"));
 	spine_02->SetupAttachment(GetMesh(), FName("spine_02"));
-	spine_02->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("spine_02"), spine_02);
 	
 	spine_03 = CreateDefaultSubobject<UBoxComponent>(TEXT("spine_03"));
 	spine_03->SetupAttachment(GetMesh(), FName("spine_03"));
-	spine_03->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("spine_03"), spine_03);
 
 	upperarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_l"));
 	upperarm_l->SetupAttachment(GetMesh(), FName("upperarm_l"));
-	upperarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("upperarm_l"), upperarm_l);
 	
 	upperarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("upperarm_r"));
 	upperarm_r->SetupAttachment(GetMesh(), FName("upperarm_r"));
-	upperarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("upperarm_r"), upperarm_r);
 		
 	lowerarm_l = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_l"));
 	lowerarm_l->SetupAttachment(GetMesh(), FName("lowerarm_l"));
-	lowerarm_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("lowerarm_l"), lowerarm_l);
 
 	lowerarm_r = CreateDefaultSubobject<UBoxComponent>(TEXT("lowerarm_r"));
 	lowerarm_r->SetupAttachment(GetMesh(), FName("lowerarm_r"));
-	lowerarm_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("lowerarm_r"), lowerarm_r);
 
 	hand_l = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_l"));
 	hand_l->SetupAttachment(GetMesh(), FName("hand_l"));
-	hand_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("hand_l"), hand_l);
 
 	hand_r = CreateDefaultSubobject<UBoxComponent>(TEXT("hand_r"));
 	hand_r->SetupAttachment(GetMesh(), FName("hand_r"));
-	hand_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("hand_r"), hand_r);
 
 	backpack = CreateDefaultSubobject<UBoxComponent>(TEXT("backpack"));
 	backpack->SetupAttachment(GetMesh(), FName("backpack"));
-	backpack->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("backpack"), backpack);
 
 	blanket = CreateDefaultSubobject<UBoxComponent>(TEXT("blanket"));
 	blanket->SetupAttachment(GetMesh(), FName("backpack"));
-	blanket->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("blanket"), blanket);
 
 	thigh_l = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_l"));
 	thigh_l->SetupAttachment(GetMesh(), FName("thigh_l"));
-	thigh_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("thigh_l"), thigh_l);
 
 	thigh_r = CreateDefaultSubobject<UBoxComponent>(TEXT("thigh_r"));
 	thigh_r->SetupAttachment(GetMesh(), FName("thigh_r"));
-	thigh_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("thigh_r"), thigh_r);
 
 	calf_l = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_l"));
 	calf_l->SetupAttachment(GetMesh(), FName("calf_l"));
-	calf_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("calf_l"), calf_l);
 
 	calf_r = CreateDefaultSubobject<UBoxComponent>(TEXT("calf_r"));
 	calf_r->SetupAttachment(GetMesh(), FName("calf_r"));
-	calf_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("calf_r"), calf_r);
 	
 	foot_l = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_l"));
 	foot_l->SetupAttachment(GetMesh(), FName("foot_l"));
-	foot_l->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("foot_l"), foot_l);
 	
 	foot_r = CreateDefaultSubobject<UBoxComponent>(TEXT("foot_r"));
 	foot_r->SetupAttachment(GetMesh(), FName("foot_r"));
-	foot_r->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	HitCollisionBoxes.Add(FName("foot_r"), foot_r);
-	
+
+	for (auto Box : HitCollisionBoxes)
+	{
+		if (Box.Value)
+		{
+			Box.Value->SetCollisionObjectType(ECC_HitBox);
+			Box.Value->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+			Box.Value->SetCollisionResponseToChannel(ECC_HitBox, ECollisionResponse::ECR_Block);
+			Box.Value->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
 }
 
 void ASarCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -172,9 +164,9 @@ void ASarCharacter::OnRep_ReplicatedMovement()
 
 void ASarCharacter::Elim()
 {
-	if (Combat && Combat->EquippedWeapon)
+	if (CombatComp && CombatComp->EquippedWeapon)
 	{
-		Combat->EquippedWeapon->Dropped();
+		CombatComp->EquippedWeapon->Dropped();
 	}
 	MulticastElim();
 	GetWorldTimerManager().SetTimer(
@@ -207,9 +199,9 @@ void ASarCharacter::MulticastElim_Implementation()
 	//	Disable character movement
 	bDisableGameplay = true;
 	GetCharacterMovement()->DisableMovement();
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->FireButtonPressed(false);
+		CombatComp->FireButtonPressed(false);
 	}
 	//	Dissable collision
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -256,9 +248,9 @@ void ASarCharacter::Destroyed()
 
 	ASarGameMode* SarGameMode = Cast<ASarGameMode>(UGameplayStatics::GetGameMode(this));
 	bool bMatchNotInProgress = SarGameMode && SarGameMode->GetMatchState() != MatchState::InProgress;
-	if (Combat && Combat->EquippedWeapon && bMatchNotInProgress)
+	if (CombatComp && CombatComp->EquippedWeapon && bMatchNotInProgress)
 	{
-		Combat->EquippedWeapon->Destroy();
+		CombatComp->EquippedWeapon->Destroy();
 	}
 }
 
@@ -339,9 +331,9 @@ void ASarCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 void ASarCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->Character = this;
+		CombatComp->Character = this;
 	}
 	if (LagCompensation)
 	{
@@ -355,7 +347,7 @@ void ASarCharacter::PostInitializeComponents()
 
 void ASarCharacter::PlayFireMontage(bool bAiming)
 {
-	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp == nullptr || CombatComp->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && FireWeaponMontage)
@@ -369,7 +361,7 @@ void ASarCharacter::PlayFireMontage(bool bAiming)
 
 void ASarCharacter::PlayReloadMontage()
 {
-	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp == nullptr || CombatComp->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && ReloadMontage)
@@ -377,7 +369,7 @@ void ASarCharacter::PlayReloadMontage()
 		AnimInstance->Montage_Play(ReloadMontage);
 		FName SectionName;
 
-		switch (Combat->EquippedWeapon->GetWeaponType())
+		switch (CombatComp->EquippedWeapon->GetWeaponType())
 		{
 		case EWeaponType::EWT_AssaultRifle:
 			SectionName = FName("Rifle");
@@ -405,7 +397,7 @@ void ASarCharacter::PlayElimMontage()
 
 void ASarCharacter::PlayHitReactMontage()
 {
-	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp == nullptr || CombatComp->EquippedWeapon == nullptr) return;
 
 	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (AnimInstance && HitReactMontage)
@@ -471,17 +463,17 @@ void ASarCharacter::LookUp(float Value)
 void ASarCharacter::EquipButtonPressed()
 {
 	if (bDisableGameplay) return;
-	if (Combat)
+	if (CombatComp)
 	{
-		ServerEquipButtonPressed();
+		if (CombatComp->CombatState == ECombatState::ECS_Unoccupied) ServerEquipButtonPressed();
 	}
 }
 
 void ASarCharacter::ServerEquipButtonPressed_Implementation()
 {
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->EquipWeapon(OverlappingWeapon);
+		CombatComp->EquipWeapon(OverlappingWeapon);
 	}
 }
 
@@ -501,27 +493,27 @@ void ASarCharacter::CrouchButtonPressed()
 void ASarCharacter::ReloadButtonPressed()
 {
 	if (bDisableGameplay) return;
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->Reload();
+		CombatComp->Reload();
 	}
 }
 
 void ASarCharacter::AimButtonPressed()
 {
 	if (bDisableGameplay) return;
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->SetAiming(true);
+		CombatComp->SetAiming(true);
 	}
 }
 
 void ASarCharacter::AimButtonReleased()
 {
 	if (bDisableGameplay) return;
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->SetAiming(false);
+		CombatComp->SetAiming(false);
 	}
 }
 
@@ -534,7 +526,7 @@ float ASarCharacter::CalculateSpeed()
 
 void ASarCharacter::AimOffset(float DeltaTime)
 {
-	if (Combat && Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp && CombatComp->EquippedWeapon == nullptr) return;
 	float Speed = CalculateSpeed();
 	bool bIsInAir = GetCharacterMovement()->IsFalling();
 
@@ -577,7 +569,7 @@ void ASarCharacter::CalculateAO_Pitch()
 
 void ASarCharacter::SimProxiesTurn()
 {
-	if (Combat == nullptr || Combat->EquippedWeapon == nullptr) return;
+	if (CombatComp == nullptr || CombatComp->EquippedWeapon == nullptr) return;
 	bRotateRootBone = false;
 	float Speed = CalculateSpeed();
 	if(Speed > 0.f)
@@ -625,18 +617,18 @@ void ASarCharacter::Jump()
 void ASarCharacter::FireButtonPressed()
 {
 	if (bDisableGameplay) return;
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->FireButtonPressed(true);
+		CombatComp->FireButtonPressed(true);
 	}
 }
 
 void ASarCharacter::FireButtonReleased()
 {
 	if (bDisableGameplay) return;
-	if (Combat)
+	if (CombatComp)
 	{
-		Combat->FireButtonPressed(false);
+		CombatComp->FireButtonPressed(false);
 	}
 }
 
@@ -668,17 +660,17 @@ void ASarCharacter::HideCameraIfCharacterClose()
 	if ((FollowCamera->GetComponentLocation() - GetActorLocation()).Size() < CameraThreshold)
 	{
 		GetMesh()->SetVisibility(false);
-		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		if (CombatComp && CombatComp->EquippedWeapon && CombatComp->EquippedWeapon->GetWeaponMesh())
 		{
-			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
+			CombatComp->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = true;
 		}
 	}
 	else
 	{
 		GetMesh()->SetVisibility(true);
-		if (Combat && Combat->EquippedWeapon && Combat->EquippedWeapon->GetWeaponMesh())
+		if (CombatComp && CombatComp->EquippedWeapon && CombatComp->EquippedWeapon->GetWeaponMesh())
 		{
-			Combat->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
+			CombatComp->EquippedWeapon->GetWeaponMesh()->bOwnerNoSee = false;
 		}
 	}
 }
@@ -701,10 +693,10 @@ void ASarCharacter::UpdateHUDHealth()
 void ASarCharacter::UpdateHUDAmmo()
 {
 	SarPlayerController = SarPlayerController == nullptr ? Cast<ASarPlayerController>(Controller) : SarPlayerController;
-	if (SarPlayerController && Combat && Combat->EquippedWeapon)
+	if (SarPlayerController && CombatComp && CombatComp->EquippedWeapon)
 	{
-		SarPlayerController->SetHUDCarriedAmmo(Combat->CarriedAmmo);
-		SarPlayerController->SetHUDWeaponAmmo(Combat->EquippedWeapon->GetAmmo());
+		SarPlayerController->SetHUDCarriedAmmo(CombatComp->CarriedAmmo);
+		SarPlayerController->SetHUDWeaponAmmo(CombatComp->EquippedWeapon->GetAmmo());
 	}
 }
 
@@ -769,35 +761,35 @@ void ASarCharacter::OnRep_OverlappingWeapon(AWeapon* LastWeapon)
 
 bool ASarCharacter::IsWeaponEquipped()
 {
-	return (Combat && Combat->EquippedWeapon);
+	return (CombatComp && CombatComp->EquippedWeapon);
 }
 
 bool ASarCharacter::IsAiming()
 {
-	return (Combat && Combat->bAiming);
+	return (CombatComp && CombatComp->bAiming);
 }
 
 AWeapon* ASarCharacter::GetEquippedWeapon()
 {
-	if (Combat == nullptr) return nullptr;
-	return Combat->EquippedWeapon;
+	if (CombatComp == nullptr) return nullptr;
+	return CombatComp->EquippedWeapon;
 }
 
 FVector ASarCharacter::GetHitTarget() const
 {
-	if (Combat == nullptr) return FVector();
-	return Combat->HitTarget;
+	if (CombatComp == nullptr) return FVector();
+	return CombatComp->HitTarget;
 }
 
 ECombatState ASarCharacter::GetCombatState() const
 {
-	if (Combat == nullptr) return ECombatState::ECS_MAX;
-	return Combat->CombatState;
+	if (CombatComp == nullptr) return ECombatState::ECS_MAX;
+	return CombatComp->CombatState;
 }
 
 bool ASarCharacter::IsLocallyReloading()
 {
-	if (Combat == nullptr) return false;
-	return Combat->bLocallyReloading;
+	if (CombatComp == nullptr) return false;
+	return CombatComp->bLocallyReloading;
 }
 

@@ -147,7 +147,7 @@ private:
 	 */
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UCombatComponent* Combat;
+	class UCombatComponent* CombatComp;
 
 	UPROPERTY(VisibleAnywhere)
 	class ULagCompensationComponent* LagCompensation;
@@ -271,7 +271,7 @@ public:
 	FORCEINLINE float GetHealth() const { return Health; }
 	FORCEINLINE float GetMaxHealth() const { return MaxHealth; }
 	ECombatState GetCombatState() const;
-	FORCEINLINE UCombatComponent* GetCombat() const { return Combat; }
+	FORCEINLINE UCombatComponent* GetCombat() const { return CombatComp; }
 	FORCEINLINE bool GetDisableGameplay() const { return bDisableGameplay; }
 	bool IsLocallyReloading();
 	FORCEINLINE ULagCompensationComponent* GetLagCompensation() const { return LagCompensation; }

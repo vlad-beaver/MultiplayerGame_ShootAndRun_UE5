@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Weapon.h"
+#include "ShootAndRun/Weapon/Projectile.h"
 #include "ProjectileWeapon.generated.h"
 
 /**
@@ -19,6 +20,9 @@ public:
 
 private:
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AProjectile> ServerSideRewindProjectileClass;
+	
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AProjectile> ProjectileClass;
 };

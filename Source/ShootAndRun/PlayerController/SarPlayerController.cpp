@@ -48,17 +48,24 @@ void ASarPlayerController::Tick(float DeltaTime)
 
 void ASarPlayerController::CheckPing(float DeltaTime)
 {
+	if (HasAuthority()) return;
 	HighPingRunningTime += DeltaTime;
 	if (HighPingRunningTime > CheckPingFrequency)
 	{
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing() * 4 : %d"), PlayerState->GetPing() * 4);
 			if (PlayerState->GetPing() * 4 > HighPingThreshold)	//	Ping is compressed; it's actually ping / 4
 				{
 				HighPingWarning();
 				PingAnimationRunningTime = 0.f;
+				ServerReportPingStatus(true);
 				}
+			else
+			{
+				ServerReportPingStatus(false);
+			}
 		}
 		HighPingRunningTime = 0.f;
 	}
@@ -74,6 +81,12 @@ void ASarPlayerController::CheckPing(float DeltaTime)
 			StopHighPingWarning();
 		}
 	}
+}
+
+// Is the ping too high?
+void ASarPlayerController::ServerReportPingStatus_Implementation(bool bHighPing)
+{
+	HighPingDelegate.Broadcast(bHighPing);
 }
 
 void ASarPlayerController::CheckTimeSync(float DeltaTime)
