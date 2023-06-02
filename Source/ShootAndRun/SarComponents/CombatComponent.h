@@ -43,8 +43,8 @@ protected:
 	void FireHitScanWeapon();
 	void LocalFire(const FVector_NetQuantize& TraceHitTarget);
 
-	UFUNCTION(Server, Reliable)
-	void ServerFire(const FVector_NetQuantize& TraceHitTarget);
+	UFUNCTION(Server, Reliable, WithValidation)
+	void ServerFire(const FVector_NetQuantize& TraceHitTarget, float FireDelay);
 
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastFire(const FVector_NetQuantize& TraceHitTarget);
