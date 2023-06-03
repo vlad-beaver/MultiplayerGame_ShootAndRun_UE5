@@ -162,23 +162,18 @@ void ASarCharacter::OnRep_ReplicatedMovement()
 	TimeSinceLastMoveReplication = 0.f;
 }
 
-void ASarCharacter::Elim()
+void ASarCharacter::Elim(bool bPlayerLeftGame)
 {
 	if (CombatComp && CombatComp->EquippedWeapon)
 	{
 		CombatComp->EquippedWeapon->Dropped();
 	}
-	MulticastElim();
-	GetWorldTimerManager().SetTimer(
-		ElimTimer,
-		this,
-		&ASarCharacter::ElimTimerFinished,
-		ElimDelay
-	);
+	MulticastElim(bPlayerLeftGame);
 }
 
-void ASarCharacter::MulticastElim_Implementation()
+void ASarCharacter::MulticastElim_Implementation(bool bPlayerLeftGame)
 {
+	bLeftGame = bPlayerLeftGame;
 	if(SarPlayerController)
 	{
 		SarPlayerController->SetHUDWeaponAmmo(0);
@@ -226,14 +221,34 @@ void ASarCharacter::MulticastElim_Implementation()
 			GetActorLocation()
 		);
 	}
+	GetWorldTimerManager().SetTimer(
+	ElimTimer,
+	this,
+	&ASarCharacter::ElimTimerFinished,
+	ElimDelay
+);
 }
 
 void ASarCharacter::ElimTimerFinished()
 {
 	ASarGameMode* SarGameMode = GetWorld()->GetAuthGameMode<ASarGameMode>();
-	if (SarGameMode)
+	if (SarGameMode && !bLeftGame)
 	{
 		SarGameMode->RequestRespawn(this, Controller);
+	}
+	if (bLeftGame && IsLocallyControlled())
+	{
+		OnLeftGame.Broadcast();
+	}
+}
+
+void ASarCharacter::ServerLeaveGame_Implementation()
+{
+	ASarGameMode* SarGameMode = GetWorld()->GetAuthGameMode<ASarGameMode>();
+	SarPlayerState = SarPlayerState == nullptr ? GetPlayerState<ASarPlayerState>() : SarPlayerState;
+	if (SarGameMode && SarPlayerState)
+	{
+		SarGameMode->PlayerLeftGame(SarPlayerState);
 	}
 }
 

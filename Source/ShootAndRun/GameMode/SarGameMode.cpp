@@ -99,7 +99,7 @@ void ASarGameMode::PlayerEliminated(ASarCharacter* ElimmedCharacter, ASarPlayerC
 	
 	if(ElimmedCharacter)
 	{
-		ElimmedCharacter->Elim();
+		ElimmedCharacter->Elim(false);
 	}
 }
 
@@ -116,5 +116,20 @@ void ASarGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* Eli
 		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 		int32 Selection = FMath::RandRange(0, PlayerStarts.Num() - 1);
 		RestartPlayerAtPlayerStart(ElimmedController, PlayerStarts[Selection]);
+	}
+}
+
+void ASarGameMode::PlayerLeftGame(ASarPlayerState* PlayerLeaving)
+{
+	if (PlayerLeaving == nullptr) return;
+	ASarGameState* SarGameState = GetGameState<ASarGameState>();
+	if (SarGameState && SarGameState->TopScoringPlayers.Contains(PlayerLeaving))
+	{
+		SarGameState->TopScoringPlayers.Remove(PlayerLeaving);
+	}
+	ASarCharacter* CharacterLeaving = Cast<ASarCharacter>(PlayerLeaving->GetPawn());
+	if (CharacterLeaving)
+	{
+		CharacterLeaving->Elim(true);
 	}
 }

@@ -23,8 +23,9 @@ public:
 	ASarGameMode();
 	virtual void Tick(float DeltaTime) override;
 	virtual void PlayerEliminated(class ASarCharacter* ElimmedCharacter, class ASarPlayerController* VictimController, class ASarPlayerController* AttackerController);
-	virtual void RequestRespawn(class ACharacter* ElimmedCharacter, AController* ElimmedController); 
+	virtual void RequestRespawn(class ACharacter* ElimmedCharacter, AController* ElimmedController);
 
+	void PlayerLeftGame(class ASarPlayerState* PlayerLeaving);
 	UPROPERTY(EditDefaultsOnly)
 	float WarmupTime = 10.f;
 
