@@ -22,6 +22,44 @@
 #include "Components/Image.h"
 #include "ShootAndRun//HUD/ReturnToMainMenu.h"
 
+void ASarPlayerController::BroadcastElim(APlayerState* Attacker, APlayerState* Victim)
+{
+	ClientElimAnnouncement(Attacker, Victim);
+}
+
+void ASarPlayerController::ClientElimAnnouncement_Implementation(APlayerState* Attacker, APlayerState* Victim)
+{
+	APlayerState* Self = GetPlayerState<APlayerState>();
+	if (Attacker && Victim && Self)
+	{
+		SarHUD = SarHUD == nullptr ? Cast<ASarHUD>(GetHUD()) : SarHUD;
+		if (SarHUD)
+		{
+			if (Attacker == Self && Victim != Self)
+			{
+				SarHUD->AddElimAnnouncement(TEXT("Ты"), Victim->GetPlayerName());
+				return;
+			}
+			if (Victim == Self && Attacker != Self)
+			{
+				SarHUD->AddElimAnnouncement(Attacker->GetPlayerName(), TEXT("тебя"));
+				return;
+			}
+			if (Attacker == Victim && Attacker == Self)
+			{
+				SarHUD->AddElimAnnouncement(TEXT("Ты"), TEXT("себя"));
+				return;
+			}
+			if (Attacker == Victim && Attacker != Self)
+			{
+				SarHUD->AddElimAnnouncement(Attacker->GetPlayerName(), TEXT("себя"));
+				return;
+			}
+			SarHUD->AddElimAnnouncement(Attacker->GetPlayerName(), Victim->GetPlayerName());
+		}
+	}
+}
+
 void ASarPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
@@ -77,7 +115,6 @@ void ASarPlayerController::CheckPing(float DeltaTime)
 		PlayerState = PlayerState == nullptr ? GetPlayerState<APlayerState>() : PlayerState;
 		if (PlayerState)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("PlayerState->GetPing() * 4 : %d"), PlayerState->GetPing() * 4);
 			if (PlayerState->GetPing() * 4 > HighPingThreshold)	//	Ping is compressed; it's actually ping / 4
 				{
 				HighPingWarning();

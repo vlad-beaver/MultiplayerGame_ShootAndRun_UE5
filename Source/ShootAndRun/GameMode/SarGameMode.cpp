@@ -101,6 +101,15 @@ void ASarGameMode::PlayerEliminated(ASarCharacter* ElimmedCharacter, ASarPlayerC
 	{
 		ElimmedCharacter->Elim(false);
 	}
+
+	for (FConstPlayerControllerIterator It = GetWorld()->GetPlayerControllerIterator(); It; ++It)
+	{
+		ASarPlayerController* SarPlayer = Cast<ASarPlayerController>(*It);
+		if (SarPlayer && AttackerPlayerState && VictimPlayerState)
+		{
+			SarPlayer->BroadcastElim(AttackerPlayerState, VictimPlayerState);
+		}
+	}
 }
 
 void ASarGameMode::RequestRespawn(ACharacter* ElimmedCharacter, AController* ElimmedController)

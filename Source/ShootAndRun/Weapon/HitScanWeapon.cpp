@@ -9,7 +9,6 @@
 #include "Sound/SoundCue.h"
 #include "WeaponTypes.h"
 
-#include "DrawDebugHelpers.h"
 #include "ShootAndRun/PlayerController/SarPlayerController.h"
 #include "ShootAndRun/SarComponents/LagCompensationComponent.h"
 
@@ -115,8 +114,6 @@ void AHitScanWeapon::WeaponTraceHit(const FVector& TraceStart, const FVector& Hi
 		{
 			BeamEnd = OutHit.ImpactPoint;
 		}
-
-		DrawDebugSphere(GetWorld(), BeamEnd, 16.f, 12, FColor::Orange, true);
 		
 		if (BeamParticles)
 		{
