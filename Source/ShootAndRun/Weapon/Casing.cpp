@@ -17,6 +17,7 @@ ACasing::ACasing()
 	CasingMesh->SetEnableGravity(true);
 	CasingMesh->SetNotifyRigidBodyCollision(true);
 	ShellEjectionImpulse = 10.f;
+	//	test
 }
 
 void ACasing::BeginPlay()
