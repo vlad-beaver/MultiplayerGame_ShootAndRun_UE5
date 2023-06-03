@@ -20,6 +20,7 @@
 #include "ShootAndRun/SarComponents/CombatComponent.h"
 #include "ShootAndRun/GameState/SarGameState.h"
 #include "Components/Image.h"
+#include "ShootAndRun//HUD/ReturnToMainMenu.h"
 
 void ASarPlayerController::BeginPlay()
 {
@@ -27,6 +28,27 @@ void ASarPlayerController::BeginPlay()
 
 	SarHUD = Cast<ASarHUD>(GetHUD());
 	ServerCheckMatchState();
+}
+
+void ASarPlayerController::ShowReturnToMainMenu()
+{
+	if (ReturnToMainMenuWidget == nullptr) return;
+	if (ReturnToMainMenu == nullptr)
+	{
+		ReturnToMainMenu = CreateWidget<UReturnToMainMenu>(this, ReturnToMainMenuWidget);
+	}
+	if (ReturnToMainMenu)
+	{
+		bReturnToMainMenuOpen = !bReturnToMainMenuOpen;
+		if (bReturnToMainMenuOpen)
+		{
+			ReturnToMainMenu->MenuSetup();
+		}
+		else
+		{
+			ReturnToMainMenu->MenuTearDown();
+		}
+	}
 }
 
 void ASarPlayerController::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -374,6 +396,15 @@ void ASarPlayerController::PollInit()
 			}
 		}
 	}
+}
+
+void ASarPlayerController::SetupInputComponent()
+{
+	Super::SetupInputComponent();
+	if (InputComponent == nullptr) return;
+
+	InputComponent->BindAction("Quit", IE_Pressed, this, &ASarPlayerController::ShowReturnToMainMenu);
+
 }
 
 void ASarPlayerController::ServerRequestServerTime_Implementation(float TimeOfClientRequest)
