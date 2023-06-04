@@ -525,7 +525,7 @@ void ASarPlayerController::HandleCooldown()
 		if (bHUDValid)
 		{
 			SarHUD->Announcement->SetVisibility(ESlateVisibility::Visible);
-			FString AnnouncementText("New Match Starts In:");
+			FString AnnouncementText(TEXT("Следующий матч начнется через:"));
 			SarHUD->Announcement->AnnouncementText->SetText(FText::FromString(AnnouncementText));
 
 			ASarGameState* SarGameState = Cast<ASarGameState>(UGameplayStatics::GetGameState(this));
@@ -536,15 +536,15 @@ void ASarPlayerController::HandleCooldown()
 				FString InfoTextString;
 				if (TopPlayers.Num() == 0)
 				{
-					InfoTextString = FString("There is no winner.");
+					InfoTextString = FString(TEXT("Победила дружба!"));
 				}
 				else if (TopPlayers.Num() == 1 && TopPlayers[0] == SarPlayerState)
 				{
-					InfoTextString = FString("You are the winner!");
+					InfoTextString = FString(TEXT("Ты лучший стрелок!"));
 				}
 				else if (TopPlayers.Num() == 1)
 				{
-					InfoTextString = FString::Printf(TEXT("Winner: \n%s"), *TopPlayers[0]->GetPlayerName());
+					InfoTextString = FString::Printf(TEXT("Победитель: \n%s"), *TopPlayers[0]->GetPlayerName());
 				}
 				else if (TopPlayers.Num() > 1)
 				{
